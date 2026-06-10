@@ -59,3 +59,8 @@ class StartSimulationRequest(BaseModel):
 class Topology(BaseModel):
     nodes: List[Node]
     edges: List[Edge]
+
+
+class ScenariosOut(BaseModel):
+    """Wrapper for Agno agent response that returns a list of scenarios."""
+    scenarios: List[Scenario]

@@ -3,11 +3,12 @@ from uuid import uuid4
 from datetime import datetime
 import asyncio
 
-from models.simulation import StartSimulationRequest, Scenario
+from models.simulation import StartSimulationRequest, Scenario, Topology
 from data.topology import generate_mock_topology
 from data.scenarios import generate_mock_scenarios
 from engine.simulation_manager import SimulationManager
 from engine.websocket_manager import manager
+from engine.llm_manager import llm_manager
 
 
 router = APIRouter(tags=["simulation"])
@@ -25,16 +26,32 @@ async def upload_diagram(file: UploadFile = File(...)):
 
     simulation_id = str(uuid4())
 
-    topology_nodes, topology_edges = generate_mock_topology()
-    scenarios = generate_mock_scenarios()
+    # Read uploaded image bytes
+    image_bytes = await file.read()
+
+    # Try LLM-based parsing; fall back to mock generators on failure
+    # try:
+    #     nodes, edges = await llm_manager.parse_topology(image_bytes)
+    #     topology = Topology(nodes=nodes, edges=edges)
+    #     scenarios = await llm_manager.generate_scenarios(topology, image_bytes)
+    # except Exception:
+    # topology_nodes, topology_edges = generate_mock_topology()
+    # scenarios = generate_mock_scenarios()
+    # nodes, edges = topology_nodes, topology_edges
+
+    nodes, edges = await llm_manager.parse_topology(image_bytes)
+    topology = Topology(nodes=nodes, edges=edges)
+    scenarios = await llm_manager.generate_scenarios(image_bytes,topology)
+
+    print(scenarios)
 
     SIMULATIONS[simulation_id] = {
         "id": simulation_id,
         "filename": file.filename,
         "createdAt": datetime.utcnow().isoformat(),
         "topology": {
-            "nodes": [node.dict() for node in topology_nodes],
-            "edges": [edge.dict() for edge in topology_edges],
+            "nodes": [node.dict() for node in nodes],
+            "edges": [edge.dict() for edge in edges],
         },
         "scenarios": [scenario.dict() for scenario in scenarios],
     }

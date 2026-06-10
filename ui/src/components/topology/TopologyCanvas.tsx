@@ -5,6 +5,9 @@ import ReactFlow, {
   type Node,
   type Edge,
 } from "reactflow"
+import { useState } from "react"
+
+import NodeDetailsPanel from "./NodeDetailsPanel"
 
 import "reactflow/dist/style.css"
 
@@ -27,6 +30,7 @@ const tierOrder: Record<string, number> = {
 
 
 export default function TopologyCanvas() {
+  const [selectedNode, setSelectedNode] = useState<Node | null>(null)
   const topologyNodes = useSimulationStore(
     (s) => s.nodes
   )
@@ -127,6 +131,8 @@ export default function TopologyCanvas() {
         edges={edges}
         nodeTypes={nodeTypes}
         fitView
+        onNodeClick={(_, node) => setSelectedNode(node)}
+        onPaneClick={() => setSelectedNode(null)}
       >
         <Background
           gap={24}
@@ -142,6 +148,9 @@ export default function TopologyCanvas() {
           }}
         />
       </ReactFlow>
+
+      {/* Node details side panel */}
+      <NodeDetailsPanel node={selectedNode} onClose={() => setSelectedNode(null)} />
     </div>
   )
 }
